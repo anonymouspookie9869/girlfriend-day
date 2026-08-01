@@ -54,7 +54,11 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
       if (p.fallbackUrl && p.fallbackUrl !== p.url) {
         return p.fallbackUrl.startsWith("http") ? p.fallbackUrl : getGitHubCdnUrl(p.fallbackUrl);
       }
-      return p.url.startsWith("http") ? getAssetUrl(p.fallbackUrl || "/photos/image1.jpg") : getGitHubCdnUrl(p.url);
+      if (p.url.startsWith("http")) {
+        const idNum = p.id.replace(/[pv]/, "");
+        return `/photos/image${idNum}.jpg`;
+      }
+      return getGitHubCdnUrl(p.url);
     }
     return getAssetUrl(p.url);
   };

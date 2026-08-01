@@ -59,7 +59,11 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
       if (video.fallbackUrl && video.fallbackUrl !== video.url) {
         return video.fallbackUrl.startsWith("http") ? video.fallbackUrl : getGitHubCdnUrl(video.fallbackUrl);
       }
-      return video.url.startsWith("http") ? getAssetUrl(video.fallbackUrl || "/photos/image1.jpg") : getGitHubCdnUrl(video.url);
+      if (video.url.startsWith("http")) {
+        const idNum = video.id.replace("v", "");
+        return `/photos/image${idNum}.jpg`;
+      }
+      return getGitHubCdnUrl(video.url);
     }
     return getAssetUrl(video.url);
   };
