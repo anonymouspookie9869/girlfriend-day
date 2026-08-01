@@ -59,6 +59,16 @@ export function getAssetUrl(path?: string): string {
   }
 
   const cleanPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
+
+  // Automatically route relative media assets to jsDelivr GitHub CDN to ensure Vercel and mobile deployments work perfectly
+  if (
+    cleanPath.startsWith("/photos/") ||
+    cleanPath.startsWith("/videos/") ||
+    cleanPath.startsWith("/music/")
+  ) {
+    return `${DEFAULT_GITHUB_CDN_BASE}${cleanPath}`;
+  }
+
   return cleanPath;
 }
 

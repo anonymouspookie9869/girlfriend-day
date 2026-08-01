@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { BookOpen, ChevronLeft, ChevronRight, Bookmark, Sparkles } from "lucide-react";
 import { BookPage } from "../types";
+import { getAssetUrl } from "../utils/assets";
 
 interface Page6MemoryBookProps {
   bookPages: BookPage[];
@@ -68,7 +69,7 @@ export const Page6MemoryBook: React.FC<Page6MemoryBookProps> = ({ bookPages, onN
               {currentPage.imageUrl && (
                 <div className="md:col-span-5 aspect-[4/3] rounded-2xl overflow-hidden shadow-md bg-slate-100">
                   <img
-                    src={currentPage.imageUrl}
+                    src={getAssetUrl(currentPage.imageUrl)}
                     alt={currentPage.title}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
