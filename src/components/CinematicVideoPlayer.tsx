@@ -382,7 +382,7 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
                   >
                     {(() => {
                       const primaryVideo = activeVideo.videoUrl;
-                      const fallbackVideo = activeVideo.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
+                      const fallbackVideo = activeVideo.fallbackVideoUrl || activeVideo.videoUrl || "/videos/video1.mp4";
                       const isError = videoErrorMap[activeVideo.id];
 
                       let activeSrc = isError

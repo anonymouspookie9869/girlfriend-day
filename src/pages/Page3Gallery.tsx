@@ -449,7 +449,7 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
                     {activePhoto.isVideo ? (
                       (() => {
                         const primaryVid = activePhoto.videoUrl;
-                        const fallbackVid = activePhoto.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
+                        const fallbackVid = activePhoto.fallbackVideoUrl || activePhoto.videoUrl || "/videos/video1.mp4";
                         const isVidError = videoErrorMap[activePhoto.id];
 
                         let vidSrc = isVidError
