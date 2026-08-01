@@ -4,6 +4,7 @@ import { Camera, X, MapPin, Calendar, Heart, Sparkles, ChevronLeft, ChevronRight
 import { PhotoItem } from "../types";
 import { triggerHeartsConfetti } from "../utils/confetti";
 import { CinematicVideoPlayer } from "../components/CinematicVideoPlayer";
+import { getAssetUrl } from "../utils/assets";
 
 interface Page3GalleryProps {
   photos: PhotoItem[];
@@ -265,8 +266,8 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
                   <img
                     src={
                       imageErrorMap[photo.id]
-                        ? photo.fallbackUrl || photo.url
-                        : photo.url
+                        ? getAssetUrl(photo.fallbackUrl || photo.url)
+                        : getAssetUrl(photo.url)
                     }
                     alt={photo.caption}
                     referrerPolicy="no-referrer"
@@ -427,29 +428,39 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
             >
               <div className="w-full flex-1 max-h-[58vh] rounded-2xl overflow-hidden mb-4 bg-slate-950 flex items-center justify-center relative group">
                 {activePhoto.isVideo ? (
-                  <video
-                    key={activePhoto.id + (videoErrorMap[activePhoto.id] ? "-fallback" : "-local")}
-                    controls
-                    autoPlay
-                    loop
-                    playsInline
-                    poster={activePhoto.url}
-                    onError={() => {
-                      setVideoErrorMap((prev) => ({ ...prev, [activePhoto.id]: true }));
-                    }}
-                    src={
-                      videoErrorMap[activePhoto.id]
-                        ? activePhoto.fallbackVideoUrl || activePhoto.url
-                        : activePhoto.videoUrl || activePhoto.fallbackVideoUrl
-                    }
-                    className="w-full h-full object-contain max-h-[58vh] rounded-2xl"
-                  />
+                  (() => {
+                    const primaryVid = activePhoto.videoUrl ? getAssetUrl(activePhoto.videoUrl) : "";
+                    const fallbackVid = activePhoto.fallbackVideoUrl
+                      ? (activePhoto.fallbackVideoUrl.startsWith("http")
+                          ? activePhoto.fallbackVideoUrl
+                          : getAssetUrl(activePhoto.fallbackVideoUrl))
+                      : "";
+                    const vidSrc = videoErrorMap[activePhoto.id]
+                      ? (fallbackVid || primaryVid)
+                      : (primaryVid || fallbackVid);
+
+                    return (
+                      <video
+                        key={activePhoto.id + (videoErrorMap[activePhoto.id] ? "-fallback" : "-primary")}
+                        controls
+                        autoPlay
+                        loop
+                        playsInline
+                        poster={getAssetUrl(activePhoto.url)}
+                        onError={() => {
+                          setVideoErrorMap((prev) => ({ ...prev, [activePhoto.id]: true }));
+                        }}
+                        src={vidSrc}
+                        className="w-full h-full object-contain max-h-[58vh] rounded-2xl"
+                      />
+                    );
+                  })()
                 ) : (
                   <img
                     src={
                       imageErrorMap[activePhoto.id]
-                        ? activePhoto.fallbackUrl || activePhoto.url
-                        : activePhoto.url
+                        ? getAssetUrl(activePhoto.fallbackUrl || activePhoto.url)
+                        : getAssetUrl(activePhoto.url)
                     }
                     alt={activePhoto.caption}
                     referrerPolicy="no-referrer"

@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Disc, Play, Pause, Music, Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Info } from "lucide-react";
 import { PlaylistTrack } from "../types";
 import { ambientSynth } from "../utils/audioSynth";
+import { getAssetUrl } from "../utils/assets";
 
 interface Page4PlaylistProps {
   playlist: PlaylistTrack[];
@@ -109,8 +110,8 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
         key={activeTrack.id + (audioErrorMap[activeTrack.id] ? "-fallback" : "-local")}
         src={
           audioErrorMap[activeTrack.id]
-            ? activeTrack.fallbackAudioUrl || activeTrack.audioUrl
-            : activeTrack.audioUrl || activeTrack.fallbackAudioUrl
+            ? activeTrack.fallbackAudioUrl || getAssetUrl(activeTrack.audioUrl)
+            : getAssetUrl(activeTrack.audioUrl || activeTrack.fallbackAudioUrl)
         }
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleNextTrack}

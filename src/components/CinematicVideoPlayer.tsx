@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PhotoItem } from "../types";
 import { triggerHeartsConfetti } from "../utils/confetti";
+import { getAssetUrl } from "../utils/assets";
 
 interface CinematicVideoPlayerProps {
   videos: PhotoItem[];
@@ -219,12 +220,23 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
               }`}
             >
               <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
-                <img
-                  src={video.url}
-                  alt={video.caption}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
-                />
+                {video.videoUrl ? (
+                  <video
+                    src={getAssetUrl(video.videoUrl)}
+                    poster={getAssetUrl(video.url)}
+                    preload="metadata"
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+                  />
+                ) : (
+                  <img
+                    src={getAssetUrl(video.url)}
+                    alt={video.caption}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+                  />
+                )}
 
                 {/* Dark Vignette Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 group-hover:from-black/90 transition-all" />
@@ -356,25 +368,36 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
                 onClick={togglePlay}
                 className="w-full flex-1 max-h-[65vh] bg-black flex items-center justify-center relative cursor-pointer overflow-hidden"
               >
-                <video
-                  ref={videoRef}
-                  key={activeVideo.id + (videoErrorMap[activeVideo.id] ? "-fallback" : "-local")}
-                  autoPlay
-                  playsInline
-                  loop
-                  muted={isMuted}
-                  poster={activeVideo.url}
-                  onTimeUpdate={handleTimeUpdate}
-                  onError={() => {
-                    setVideoErrorMap((prev) => ({ ...prev, [activeVideo.id]: true }));
-                  }}
-                  src={
-                    videoErrorMap[activeVideo.id]
-                      ? activeVideo.fallbackVideoUrl || activeVideo.url
-                      : activeVideo.videoUrl || activeVideo.fallbackVideoUrl
-                  }
-                  className="w-full h-full object-contain max-h-[65vh]"
-                />
+                {(() => {
+                  const primaryVideo = activeVideo.videoUrl ? getAssetUrl(activeVideo.videoUrl) : "";
+                  const fallbackVideo = activeVideo.fallbackVideoUrl
+                    ? (activeVideo.fallbackVideoUrl.startsWith("http")
+                        ? activeVideo.fallbackVideoUrl
+                        : getAssetUrl(activeVideo.fallbackVideoUrl))
+                    : "";
+                  const currentVideoSrc = videoErrorMap[activeVideo.id]
+                    ? (fallbackVideo || primaryVideo)
+                    : (primaryVideo || fallbackVideo);
+
+                  return (
+                    <video
+                      ref={videoRef}
+                      key={activeVideo.id + (videoErrorMap[activeVideo.id] ? "-fallback" : "-primary")}
+                      autoPlay
+                      playsInline
+                      loop
+                      muted={isMuted}
+                      poster={getAssetUrl(activeVideo.url)}
+                      onTimeUpdate={handleTimeUpdate}
+                      onError={() => {
+                        console.warn("Video failed to play:", activeVideo.id, currentVideoSrc);
+                        setVideoErrorMap((prev) => ({ ...prev, [activeVideo.id]: true }));
+                      }}
+                      src={currentVideoSrc}
+                      className="w-full h-full object-contain max-h-[65vh]"
+                    />
+                  );
+                })()}
 
                 {/* Big Center Play / Pause Flash Animation */}
                 <AnimatePresence>

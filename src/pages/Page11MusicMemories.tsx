@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Music, Heart, Sparkles } from "lucide-react";
 import { PhotoItem } from "../types";
+import { getAssetUrl } from "../utils/assets";
 
 interface Page11MusicMemoriesProps {
   photos: PhotoItem[];
@@ -69,7 +70,7 @@ export const Page11MusicMemories: React.FC<Page11MusicMemoriesProps> = ({
               className="absolute w-24 sm:w-32 aspect-square rounded-2xl p-1.5 bg-white/80 dark:bg-slate-900/80 shadow-xl border border-white/40 overflow-hidden"
             >
               <img
-                src={photo.url}
+                src={getAssetUrl(photo.url)}
                 alt={photo.caption}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover rounded-xl"
