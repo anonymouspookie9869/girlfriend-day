@@ -91,11 +91,7 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
     incrementView(photo.id);
   };
 
-  const filteredPhotos = photos.filter((p) => {
-    if (galleryFilter === "photos") return !p.isVideo;
-    if (galleryFilter === "videos") return p.isVideo;
-    return true;
-  });
+  const filteredPhotos = photos.filter((p) => p.isVideo);
 
   const activePhotoIndex = activePhoto ? filteredPhotos.findIndex((p) => p.id === activePhoto.id) : -1;
 
@@ -228,49 +224,15 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
       <div className="text-center mb-8">
         <span className="text-xs font-semibold tracking-widest text-pink-500 uppercase">Page 3 • Memory Gallery</span>
         <h2 className="text-3xl sm:text-4xl font-serif font-bold mt-1 py-1.5 leading-tight bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-          Captured Moments & Video Edits
+          Memory Video Edits
         </h2>
         <p className={`text-xs sm:text-sm mt-2 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-          Hover over items for floating hearts, click any photo or video edit to play in full screen!
+          Hover over items for floating hearts, click any video edit to play in full screen!
         </p>
-
-        {/* Filter Tabs */}
-        <div className="inline-flex items-center gap-1.5 p-1.5 mt-5 rounded-full bg-slate-200/60 dark:bg-slate-800/80 backdrop-blur-md border border-black/5 dark:border-white/5">
-          <button
-            onClick={() => setGalleryFilter("all")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              galleryFilter === "all"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/30"
-                : "text-slate-600 dark:text-slate-300 hover:text-pink-500"
-            }`}
-          >
-            All ({photos.length})
-          </button>
-          <button
-            onClick={() => setGalleryFilter("photos")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              galleryFilter === "photos"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/30"
-                : "text-slate-600 dark:text-slate-300 hover:text-pink-500"
-            }`}
-          >
-            <Camera className="w-3.5 h-3.5" /> Photos ({photoCount})
-          </button>
-          <button
-            onClick={() => setGalleryFilter("videos")}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              galleryFilter === "videos"
-                ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/30"
-                : "text-slate-600 dark:text-slate-300 hover:text-pink-500"
-            }`}
-          >
-            <Video className="w-3.5 h-3.5" /> Video Edits ({videoCount})
-          </button>
-        </div>
       </div>
 
       {/* Cinematic Video Edits Showcase */}
-      {videoCount > 0 && galleryFilter !== "photos" && (
+      {videoCount > 0 && (
         <CinematicVideoPlayer
           videos={photos.filter((p) => p.isVideo)}
           viewCounts={viewCounts}

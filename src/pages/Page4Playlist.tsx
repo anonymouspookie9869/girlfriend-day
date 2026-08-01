@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Disc, Play, Pause, Music, Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Info } from "lucide-react";
 import { PlaylistTrack } from "../types";
 import { getAssetUrl, getGitHubCdnUrl } from "../utils/assets";
+import { ambientSynth } from "../utils/audioSynth";
 
 interface Page4PlaylistProps {
   playlist: PlaylistTrack[];
@@ -24,28 +25,47 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
   const activeTrack = playlist[currentTrackIndex] || playlist[0];
 
   const getAudioSrc = (track: PlaylistTrack) => {
+    const num = track.id.replace(/[^\d]/g, "") || "1";
     if (secondAudioErrorMap[track.id]) {
-      const num = track.id.replace("s", "");
-      return `https://cdn.jsdelivr.net/gh/anonymouspookie9869/girlfriend-day@main/public/music/music${num}.mp3`;
+      return `https://cdn.jsdelivr.net/gh/anonymouspookie9869/girlfriend-day@main/public/music/Music${num}.mp3`;
     }
     if (audioErrorMap[track.id]) {
-      if (track.fallbackAudioUrl && track.fallbackAudioUrl !== track.audioUrl) {
-        return track.fallbackAudioUrl.startsWith("http") ? track.fallbackAudioUrl : getGitHubCdnUrl(track.fallbackAudioUrl);
-      }
-      return getGitHubCdnUrl(track.audioUrl || `/music/Music${track.id.replace("s", "")}.mp3`);
+      return `/music/music${num}.mp3`;
     }
-    return getAssetUrl(track.audioUrl || `/music/Music${track.id.replace("s", "")}.mp3`);
+    if (track.audioUrl) {
+      if (track.audioUrl.startsWith("http")) return track.audioUrl;
+      return getAssetUrl(track.audioUrl);
+    }
+    return `/music/Music${num}.mp3`;
   };
 
+  const activeAudioSrc = getAudioSrc(activeTrack);
+
+  // Duck ambient background synth while playing MP3 track
   useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(() => {
+    ambientSynth.setDucked(isPlaying, 0.1);
+    return () => {
+      ambientSynth.setDucked(false);
+    };
+  }, [isPlaying]);
+
+  // Sync audio playback when current track or source changes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn("Audio play prevented/failed:", err);
           setIsPlaying(false);
         });
       }
+    } else {
+      audio.pause();
     }
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, activeAudioSrc]);
 
   const handleTogglePlay = () => {
     if (audioRef.current) {
@@ -53,15 +73,31 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current
-          .play()
-          .then(() => setIsPlaying(true))
-          .catch((err) => {
-            console.warn("Audio play failed:", err);
-            setIsPlaying(false);
-          });
+        const promise = audioRef.current.play();
+        if (promise !== undefined) {
+          promise
+            .then(() => setIsPlaying(true))
+            .catch((err) => {
+              console.warn("Audio play failed:", err);
+              setIsPlaying(false);
+            });
+        }
       }
     }
+  };
+
+  const handleSelectTrack = (idx: number) => {
+    if (idx === currentTrackIndex && isPlaying) {
+      handleTogglePlay();
+      return;
+    }
+    setCurrentTrackIndex(idx);
+    setIsPlaying(true);
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    }, 10);
   };
 
   const handleTimeUpdate = () => {
@@ -80,19 +116,13 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
   };
 
   const handleNextTrack = () => {
-    if (currentTrackIndex < playlist.length - 1) {
-      setCurrentTrackIndex((prev) => prev + 1);
-    } else {
-      setCurrentTrackIndex(0);
-    }
+    const nextIdx = currentTrackIndex < playlist.length - 1 ? currentTrackIndex + 1 : 0;
+    handleSelectTrack(nextIdx);
   };
 
   const handlePrevTrack = () => {
-    if (currentTrackIndex > 0) {
-      setCurrentTrackIndex((prev) => prev - 1);
-    } else {
-      setCurrentTrackIndex(playlist.length - 1);
-    }
+    const prevIdx = currentTrackIndex > 0 ? currentTrackIndex - 1 : playlist.length - 1;
+    handleSelectTrack(prevIdx);
   };
 
   const toggleMute = () => {
@@ -109,22 +139,25 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const activeAudioSrc = getAudioSrc(activeTrack);
-
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 max-w-4xl mx-auto flex flex-col justify-center">
-      {/* Hidden Audio Element */}
+      {/* Persistent Audio Element without dynamic key to preserve playback node */}
       <audio
         ref={audioRef}
-        key={activeTrack.id + "-" + activeAudioSrc}
         src={activeAudioSrc}
+        preload="auto"
         onTimeUpdate={handleTimeUpdate}
+        onLoadedData={() => {
+          if (audioRef.current) {
+            setDuration(audioRef.current.duration || 0);
+          }
+        }}
         onEnded={handleNextTrack}
         onError={() => {
           console.warn("Audio media error fired:", activeTrack.id, activeAudioSrc);
           if (!audioErrorMap[activeTrack.id]) {
             setAudioErrorMap((prev) => ({ ...prev, [activeTrack.id]: true }));
-          } else {
+          } else if (!secondAudioErrorMap[activeTrack.id]) {
             setSecondAudioErrorMap((prev) => ({ ...prev, [activeTrack.id]: true }));
           }
         }}
@@ -269,10 +302,7 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
             return (
               <motion.div
                 key={track.id}
-                onClick={() => {
-                  setCurrentTrackIndex(idx);
-                  setIsPlaying(true);
-                }}
+                onClick={() => handleSelectTrack(idx)}
                 className={`cursor-pointer p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
                   isSelected
                     ? "bg-gradient-to-r from-pink-500/15 to-purple-500/15 border-pink-400 shadow-md scale-[1.02]"
