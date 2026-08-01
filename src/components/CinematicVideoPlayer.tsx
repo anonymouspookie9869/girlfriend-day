@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Play,
@@ -303,224 +304,238 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
       </div>
 
       {/* Fullscreen Cinematic Theater Modal */}
-      <AnimatePresence>
-        {activeVideo && (
-          <div
-            onClick={() => setActiveVideo(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/92 backdrop-blur-2xl transition-all"
-          >
-            {/* Top Bar Navigation & Info */}
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-40 pointer-events-auto">
-              <div className="px-4 py-2 rounded-full bg-white/10 dark:bg-black/60 backdrop-blur-xl border border-white/15 text-white text-xs font-semibold flex items-center gap-2.5 shadow-2xl">
-                <Film className="w-4 h-4 text-pink-400 animate-pulse" />
-                <span>
-                  Cinematic Edit {activeIndex >= 0 ? activeIndex + 1 : 1} of {videos.length}
-                </span>
-                <span className="w-1 h-1 rounded-full bg-white/40" />
-                <span className="flex items-center gap-1 text-pink-300">
-                  <Eye className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{viewCounts[activeVideo.id] || 0} views</span>
-                </span>
-                <span className="w-1 h-1 rounded-full bg-white/40 hidden sm:inline" />
-                <span className="text-pink-300 hidden sm:inline truncate max-w-xs">{activeVideo.caption}</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveVideo(null);
-                }}
-                title="Exit Theater Mode (Esc)"
-                className="p-3 rounded-full bg-white/15 hover:bg-white/25 text-white transition-all backdrop-blur-xl active:scale-90 border border-white/20 shadow-2xl"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Next / Prev Navigation Controls */}
-            {videos.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  title="Previous Edit (Left Arrow)"
-                  className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-40 p-3.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all backdrop-blur-xl border border-white/15 shadow-2xl active:scale-90"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  title="Next Edit (Right Arrow)"
-                  className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-40 p-3.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all backdrop-blur-xl border border-white/15 shadow-2xl active:scale-90"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </>
-            )}
-
-            {/* Main Video Theater Stage */}
-            <motion.div
-              ref={containerRef}
-              key={activeVideo.id}
-              initial={{ opacity: 0, scale: 0.88, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.88, y: 15 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-5xl w-full max-h-[90vh] bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-white/15 flex flex-col items-center my-auto z-30 group"
-            >
-              {/* Video Display Container */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {activeVideo && (
               <div
-                onClick={togglePlay}
-                className="w-full flex-1 max-h-[65vh] bg-black flex items-center justify-center relative cursor-pointer overflow-hidden"
+                onClick={() => setActiveVideo(null)}
+                className="fixed inset-0 z-[9999] flex flex-col items-center justify-between p-3 sm:p-6 bg-black/95 backdrop-blur-2xl transition-all overflow-y-auto"
               >
-                {(() => {
-                  const primaryVideo = activeVideo.videoUrl;
-                  const fallbackVideo = activeVideo.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
-                  const isError = videoErrorMap[activeVideo.id];
-
-                  let activeSrc = isError
-                    ? (fallbackVideo || primaryVideo)
-                    : (primaryVideo || fallbackVideo);
-
-                  if (activeSrc && !activeSrc.startsWith("http")) {
-                    activeSrc = getAssetUrl(activeSrc);
-                  }
-
-                  return (
-                    <video
-                      ref={videoRef}
-                      key={activeVideo.id + "-" + (isError ? "fallback" : "primary")}
-                      src={activeSrc}
-                      autoPlay
-                      playsInline
-                      loop
-                      muted={isMuted}
-                      poster={getAssetUrl(activeVideo.url)}
-                      onTimeUpdate={handleTimeUpdate}
-                      onError={() => {
-                        console.warn("Video failed to play:", activeVideo.id, activeSrc);
-                        setVideoErrorMap((prev) => ({ ...prev, [activeVideo.id]: true }));
-                      }}
-                      className="w-full h-full object-contain max-h-[65vh]"
-                    />
-                  );
-                })()}
-
-                {/* Big Center Play / Pause Flash Animation */}
-                <AnimatePresence>
-                  {!isPlaying && (
-                    <motion.div
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.5, opacity: 0 }}
-                      className="absolute w-20 h-20 rounded-full bg-pink-500/90 text-white flex items-center justify-center shadow-2xl pointer-events-none backdrop-blur-md"
-                    >
-                      <Play className="w-9 h-9 fill-white ml-1" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Custom Cinematic Controls Bar */}
-              <div className="w-full bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800 p-4 sm:p-5 flex flex-col gap-3">
-                {/* Scrubber Progress Bar */}
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                    {formatTime(currentTime)}
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={duration || 100}
-                    value={currentTime}
-                    onChange={handleSeek}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500 hover:accent-pink-400"
-                  />
-                  <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                    {formatTime(duration)}
-                  </span>
-                </div>
-
-                {/* Control Action Buttons */}
-                <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={togglePlay}
-                      className="p-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/30 hover:scale-105 active:scale-95 transition-all"
-                      title={isPlaying ? "Pause (Space)" : "Play (Space)"}
-                    >
-                      {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={toggleMute}
-                      className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
-                      title={isMuted ? "Unmute (M)" : "Mute (M)"}
-                    >
-                      {isMuted ? <VolumeX className="w-4 h-4 text-pink-400" /> : <Volume2 className="w-4 h-4" />}
-                    </button>
-
-                    <div className="hidden sm:flex flex-col text-left pl-2">
-                      <span className="text-sm font-serif italic text-white font-medium line-clamp-1">
-                        "{activeVideo.caption}"
-                      </span>
-                      {activeVideo.shortCaption && (
-                        <span className="text-xs text-slate-400 truncate max-w-sm">
-                          {activeVideo.shortCaption}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right Actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => handleLike(e, activeVideo.id)}
-                      className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${
-                        likedMap[activeVideo.id]
-                          ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/30 scale-105"
-                          : "bg-slate-800 text-slate-200 hover:bg-pink-500/20 hover:text-pink-300"
-                      }`}
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${likedMap[activeVideo.id] ? "fill-white" : "fill-pink-400"}`} />
-                      <span>{likedMap[activeVideo.id] ? "Loved ❤️" : "Send Love"}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={toggleFullscreen}
-                      className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
-                      title="Fullscreen"
-                    >
-                      {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Local Video Path Banner */}
-                <div className="w-full mt-1 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                  <div className="flex items-center gap-2 truncate">
-                    <Info className="w-3.5 h-3.5 text-pink-400 shrink-0" />
-                    <span className="truncate">
-                      Local Path: <code className="font-mono text-pink-300">{activeVideo.videoUrl}</code>
+                {/* Top Bar Navigation & Exit Button */}
+                <div className="w-full max-w-5xl flex items-center justify-between gap-2 z-50 pointer-events-auto py-1 my-1">
+                  <div className="px-3.5 py-1.5 rounded-full bg-white/10 dark:bg-slate-900/80 backdrop-blur-xl border border-white/15 text-white text-xs font-semibold flex items-center gap-2 shadow-2xl">
+                    <Film className="w-4 h-4 text-pink-400 animate-pulse shrink-0" />
+                    <span>
+                      Video {activeIndex >= 0 ? activeIndex + 1 : 1} of {videos.length}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/40 hidden sm:inline" />
+                    <span className="hidden sm:flex items-center gap-1 text-pink-300">
+                      <Eye className="w-3.5 h-3.5 text-pink-400" />
+                      <span>{viewCounts[activeVideo.id] || 0}</span>
                     </span>
                   </div>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-pink-400 shrink-0">
-                    {videoErrorMap[activeVideo.id] ? "Fallback Stream" : "Local File Ready"}
-                  </span>
+
+                  {/* Prominent High-Contrast Mobile Exit Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveVideo(null);
+                    }}
+                    title="Exit Video (Esc)"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs tracking-wide shadow-xl shadow-pink-500/40 active:scale-95 border border-white/20 cursor-pointer transition-all shrink-0"
+                  >
+                    <X className="w-4 h-4 shrink-0" />
+                    <span>Exit Video</span>
+                  </button>
                 </div>
+
+                {/* Next / Prev Navigation Controls */}
+                {videos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      title="Previous Edit (Left Arrow)"
+                      className="fixed left-2 sm:left-6 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-3.5 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all backdrop-blur-xl border border-white/20 shadow-2xl active:scale-90"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      title="Next Edit (Right Arrow)"
+                      className="fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-3.5 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all backdrop-blur-xl border border-white/20 shadow-2xl active:scale-90"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </>
+                )}
+
+                {/* Main Video Theater Stage */}
+                <motion.div
+                  ref={containerRef}
+                  key={activeVideo.id}
+                  initial={{ opacity: 0, scale: 0.88, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.88, y: 15 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-5xl w-full max-h-[85vh] bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border border-white/15 flex flex-col items-center my-auto z-40 group shrink-0"
+                >
+                  {/* Video Display Container */}
+                  <div
+                    onClick={togglePlay}
+                    className="w-full flex-1 max-h-[58vh] bg-black flex items-center justify-center relative cursor-pointer overflow-hidden"
+                  >
+                    {(() => {
+                      const primaryVideo = activeVideo.videoUrl;
+                      const fallbackVideo = activeVideo.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
+                      const isError = videoErrorMap[activeVideo.id];
+
+                      let activeSrc = isError
+                        ? (fallbackVideo || primaryVideo)
+                        : (primaryVideo || fallbackVideo);
+
+                      if (activeSrc && !activeSrc.startsWith("http")) {
+                        activeSrc = getAssetUrl(activeSrc);
+                      }
+
+                      return (
+                        <video
+                          ref={videoRef}
+                          key={activeVideo.id + "-" + (isError ? "fallback" : "primary")}
+                          src={activeSrc}
+                          autoPlay
+                          playsInline
+                          loop
+                          muted={isMuted}
+                          poster={getAssetUrl(activeVideo.url)}
+                          onTimeUpdate={handleTimeUpdate}
+                          onError={() => {
+                            console.warn("Video failed to play:", activeVideo.id, activeSrc);
+                            setVideoErrorMap((prev) => ({ ...prev, [activeVideo.id]: true }));
+                          }}
+                          className="w-full h-full object-contain max-h-[58vh]"
+                        />
+                      );
+                    })()}
+
+                    {/* Big Center Play / Pause Flash Animation */}
+                    <AnimatePresence>
+                      {!isPlaying && (
+                        <motion.div
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          className="absolute w-20 h-20 rounded-full bg-pink-500/90 text-white flex items-center justify-center shadow-2xl pointer-events-none backdrop-blur-md"
+                        >
+                          <Play className="w-9 h-9 fill-white ml-1" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Custom Cinematic Controls Bar */}
+                  <div className="w-full bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800 p-3.5 sm:p-5 flex flex-col gap-3">
+                    {/* Scrubber Progress Bar */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        {formatTime(currentTime)}
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration || 100}
+                        value={currentTime}
+                        onChange={handleSeek}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500 hover:accent-pink-400"
+                      />
+                      <span className="text-[11px] font-mono text-slate-400 shrink-0">
+                        {formatTime(duration)}
+                      </span>
+                    </div>
+
+                    {/* Control Action Buttons */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={togglePlay}
+                          className="p-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/30 hover:scale-105 active:scale-95 transition-all"
+                          title={isPlaying ? "Pause (Space)" : "Play (Space)"}
+                        >
+                          {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={toggleMute}
+                          className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                          title={isMuted ? "Unmute (M)" : "Mute (M)"}
+                        >
+                          {isMuted ? <VolumeX className="w-4 h-4 text-pink-400" /> : <Volume2 className="w-4 h-4" />}
+                        </button>
+
+                        <div className="hidden sm:flex flex-col text-left pl-2">
+                          <span className="text-sm font-serif italic text-white font-medium line-clamp-1">
+                            "{activeVideo.caption}"
+                          </span>
+                          {activeVideo.shortCaption && (
+                            <span className="text-xs text-slate-400 truncate max-w-sm">
+                              {activeVideo.shortCaption}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Actions */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => handleLike(e, activeVideo.id)}
+                          className={`px-3.5 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md active:scale-95 ${
+                            likedMap[activeVideo.id]
+                              ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/30 scale-105"
+                              : "bg-slate-800 text-slate-200 hover:bg-pink-500/20 hover:text-pink-300"
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${likedMap[activeVideo.id] ? "fill-white" : "fill-pink-400"}`} />
+                          <span>{likedMap[activeVideo.id] ? "Loved ❤️" : "Send Love"}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={toggleFullscreen}
+                          className="p-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                          title="Fullscreen"
+                        >
+                          {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                        </button>
+
+                        {/* Secondary Exit Video Button inside Controls */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveVideo(null)}
+                          className="px-3.5 py-2 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-200 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Exit</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Local Video Path Banner */}
+                    <div className="w-full mt-1 px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="flex items-center gap-2 truncate">
+                        <Info className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                        <span className="truncate">
+                          Local Path: <code className="font-mono text-pink-300">{activeVideo.videoUrl}</code>
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-pink-400 shrink-0">
+                        {videoErrorMap[activeVideo.id] ? "Fallback Stream" : "LOCAL FILE READY"}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 };

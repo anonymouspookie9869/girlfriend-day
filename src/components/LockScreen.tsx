@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Lock, KeyRound, Sparkles, Heart } from "lucide-react";
+import { Lock, KeyRound, Sparkles, Heart, HelpCircle, Lightbulb } from "lucide-react";
 import { getDeviceInfo, getSessionId } from "../utils/storage";
 
 interface LockScreenProps {
@@ -158,15 +158,52 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, darkMod
                 </button>
               </form>
 
-              <button
-                type="button"
-                onClick={() => setShowHint(!showHint)}
-                className={`mt-4 text-xs underline cursor-pointer hover:text-pink-500 transition-colors ${
-                  darkMode ? "text-slate-500" : "text-slate-400"
-                }`}
-              >
-                {showHint ? "Hint: Password is 'forever'" : "Need a hint?"}
-              </button>
+              {/* Hint Trigger & Card */}
+              <div className="mt-5 w-full flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowHint(!showHint)}
+                  className={`text-xs font-medium flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border transition-all cursor-pointer ${
+                    darkMode
+                      ? "bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:text-pink-300"
+                      : "bg-white/90 border-pink-200/80 text-pink-600 hover:bg-pink-50 hover:border-pink-300 shadow-xs"
+                  }`}
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-pink-500" />
+                  {showHint ? "Hide hint" : "Need a hint?"}
+                </button>
+
+                <AnimatePresence>
+                  {showHint && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, height: "auto", scale: 1 }}
+                      exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className={`w-full p-3.5 rounded-2xl border text-xs text-center flex flex-col items-center gap-2 overflow-hidden ${
+                        darkMode
+                          ? "bg-pink-950/30 border-pink-900/40 text-pink-200"
+                          : "bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200/80 text-pink-800 shadow-sm"
+                      }`}
+                    >
+                      <p className="font-medium flex items-center justify-center gap-1.5">
+                        <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
+                        Secret Hint: The password is <span className="font-mono font-bold underline bg-pink-100 dark:bg-pink-900/60 px-1.5 py-0.5 rounded text-pink-600 dark:text-pink-300">forever</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPassword("forever");
+                          setErrorMsg("");
+                        }}
+                        className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 dark:text-pink-400 dark:hover:text-pink-300 underline cursor-pointer transition-colors"
+                      >
+                        Auto-fill "forever"
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         </motion.div>

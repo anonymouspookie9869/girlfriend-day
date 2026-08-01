@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Camera, X, MapPin, Calendar, Heart, Sparkles, ChevronLeft, ChevronRight, Play, Film, Video, Info, Eye } from "lucide-react";
 import { PhotoItem } from "../types";
@@ -373,200 +374,215 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
       </div>
 
       {/* Fullscreen Lightbox Modal Overlay */}
-      <AnimatePresence>
-        {activePhoto && (
-          <div
-            onClick={() => setActivePhoto(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-2xl transition-all"
-          >
-            {/* Top Bar with Counter & Close Button */}
-            <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-30 pointer-events-auto">
-              <div className="px-3.5 py-1.5 rounded-full bg-white/10 dark:bg-black/40 backdrop-blur-md border border-white/10 text-white text-xs font-medium tracking-wide flex items-center gap-2">
-                {activePhoto.isVideo ? <Video className="w-3.5 h-3.5 text-pink-400" /> : <Camera className="w-3.5 h-3.5 text-pink-400" />}
-                <span>
-                  {activePhoto.isVideo ? "Video Edit" : "Photo"} {activePhotoIndex >= 0 ? activePhotoIndex + 1 : 1} of {filteredPhotos.length}
-                </span>
-                <span className="w-1 h-1 rounded-full bg-white/30" />
-                <span className="flex items-center gap-1 text-pink-300 font-medium">
-                  <Eye className="w-3.5 h-3.5 text-pink-400" />
-                  <span>{viewCounts[activePhoto.id] || 0} views</span>
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActivePhoto(null);
-                }}
-                title="Close Lightbox (Esc)"
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md active:scale-90 border border-white/10"
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {activePhoto && (
+              <div
+                onClick={() => setActivePhoto(null)}
+                className="fixed inset-0 z-[9999] flex flex-col items-center justify-between p-3 sm:p-6 bg-black/95 backdrop-blur-2xl transition-all overflow-y-auto"
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Left Navigation Arrow */}
-            {filteredPhotos.length > 1 && (
-              <button
-                type="button"
-                onClick={handlePrevPhoto}
-                title="Previous Memory (Left Arrow)"
-                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 p-3 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all backdrop-blur-md border border-white/10 shadow-2xl active:scale-90"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-
-            {/* Right Navigation Arrow */}
-            {filteredPhotos.length > 1 && (
-              <button
-                type="button"
-                onClick={handleNextPhoto}
-                title="Next Memory (Right Arrow)"
-                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 p-3 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all backdrop-blur-md border border-white/10 shadow-2xl active:scale-90"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            )}
-
-            {/* Lightbox Main Container */}
-            <motion.div
-              key={activePhoto.id}
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl w-full max-h-[88vh] bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/20 dark:border-slate-800 p-5 sm:p-7 flex flex-col items-center my-auto z-20"
-            >
-              <div className="w-full flex-1 max-h-[58vh] rounded-2xl overflow-hidden mb-4 bg-slate-950 flex items-center justify-center relative group">
-                {activePhoto.isVideo ? (
-                  (() => {
-                    const primaryVid = activePhoto.videoUrl;
-                    const fallbackVid = activePhoto.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
-                    const isVidError = videoErrorMap[activePhoto.id];
-
-                    let vidSrc = isVidError
-                      ? (fallbackVid || primaryVid)
-                      : (primaryVid || fallbackVid);
-
-                    if (vidSrc && !vidSrc.startsWith("http")) {
-                      vidSrc = getAssetUrl(vidSrc);
-                    }
-
-                    return (
-                      <video
-                        key={activePhoto.id + "-" + (isVidError ? "fallback" : "primary")}
-                        src={vidSrc}
-                        controls
-                        autoPlay
-                        loop
-                        playsInline
-                        poster={getAssetUrl(activePhoto.url)}
-                        onError={() => {
-                          console.warn("Gallery video failed to play:", activePhoto.id, vidSrc);
-                          setVideoErrorMap((prev) => ({ ...prev, [activePhoto.id]: true }));
-                        }}
-                        className="w-full h-full object-contain max-h-[58vh] rounded-2xl"
-                      />
-                    );
-                  })()
-                ) : (
-                  <img
-                    src={getPhotoSrc(activePhoto)}
-                    alt={activePhoto.caption}
-                    referrerPolicy="no-referrer"
-                    onError={() => handleImageError(activePhoto.id)}
-                    className="w-full h-full object-contain max-h-[58vh] rounded-2xl select-none"
-                  />
-                )}
-              </div>
-
-              {/* Local Source Info Notice */}
-              {activePhoto.isVideo ? (
-                <div className="w-full max-w-xl mb-3 px-3.5 py-2 rounded-xl bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/50 flex items-center justify-between text-xs text-pink-700 dark:text-pink-300">
-                  <div className="flex items-center gap-2 truncate">
-                    <Info className="w-4 h-4 shrink-0" />
-                    <span className="truncate">
-                      Fetching from: <code className="font-mono bg-pink-100 dark:bg-pink-900/60 px-1.5 py-0.5 rounded text-[11px]">{activePhoto.videoUrl}</code>
+                {/* Top Bar with Counter & Close Button */}
+                <div className="w-full max-w-4xl flex items-center justify-between gap-2 z-50 pointer-events-auto py-1 my-1">
+                  <div className="px-3.5 py-1.5 rounded-full bg-white/10 dark:bg-black/60 backdrop-blur-md border border-white/10 text-white text-xs font-medium tracking-wide flex items-center gap-2">
+                    {activePhoto.isVideo ? <Video className="w-3.5 h-3.5 text-pink-400 shrink-0" /> : <Camera className="w-3.5 h-3.5 text-pink-400 shrink-0" />}
+                    <span>
+                      {activePhoto.isVideo ? "Video" : "Photo"} {activePhotoIndex >= 0 ? activePhotoIndex + 1 : 1} of {filteredPhotos.length}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-white/30 hidden sm:inline" />
+                    <span className="hidden sm:flex items-center gap-1 text-pink-300 font-medium">
+                      <Eye className="w-3.5 h-3.5 text-pink-400" />
+                      <span>{viewCounts[activePhoto.id] || 0} views</span>
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider shrink-0 bg-pink-200 dark:bg-pink-900 px-2 py-0.5 rounded-full">
-                    {videoErrorMap[activePhoto.id] ? "Preview Stream" : "Local Video"}
-                  </span>
-                </div>
-              ) : activePhoto.url.startsWith("/photos/") ? (
-                <div className="w-full max-w-xl mb-3 px-3.5 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/50 flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
-                  <div className="flex items-center gap-2 truncate">
-                    <Info className="w-4 h-4 shrink-0" />
-                    <span className="truncate">
-                      Fetching from: <code className="font-mono bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 rounded text-[11px]">{activePhoto.url}</code>
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider shrink-0 bg-purple-200 dark:bg-purple-900 px-2 py-0.5 rounded-full">
-                    {imageErrorMap[activePhoto.id] ? "Fallback Photo" : "Local JPEG"}
-                  </span>
-                </div>
-              ) : null}
 
-              <div className="text-center max-w-xl space-y-2.5">
-                <h3 className="text-lg sm:text-2xl font-serif italic font-medium text-slate-900 dark:text-slate-100 leading-snug">
-                  "{activePhoto.caption}"
-                </h3>
-
-                {activePhoto.shortCaption && (
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg mx-auto italic font-sans">
-                    {activePhoto.shortCaption}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-1">
-                  {activePhoto.date && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-pink-500" /> {activePhoto.date}
-                    </span>
-                  )}
-                  {activePhoto.location && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-rose-500" /> {activePhoto.location}
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
-                    <Eye className="w-3.5 h-3.5 text-pink-500" /> {viewCounts[activePhoto.id] || 0} views
-                  </span>
-                </div>
-
-                <div className="pt-2">
+                  {/* Prominent High-Contrast Mobile Exit Button */}
                   <button
                     type="button"
-                    onClick={(e) => handleLoveClick(e, activePhoto.id)}
-                    className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold transition-all shadow-md active:scale-95 ${
-                      likedPhotos[activePhoto.id]
-                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/30 scale-105"
-                        : darkMode
-                        ? "bg-slate-800 text-slate-200 hover:bg-pink-500/20"
-                        : "bg-pink-50 text-pink-600 hover:bg-pink-100"
-                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePhoto(null);
+                    }}
+                    title="Close Preview (Esc)"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs tracking-wide shadow-xl shadow-pink-500/40 active:scale-95 border border-white/20 cursor-pointer transition-all shrink-0"
                   >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        likedPhotos[activePhoto.id] ? "fill-white text-white" : "fill-pink-300 text-pink-500"
-                      }`}
-                    />
-                    <span>{likedPhotos[activePhoto.id] ? "Loved ❤️" : "Send Love"}</span>
-                    {(likesCount[activePhoto.id] || 0) > 0 && (
-                      <span className="px-2 py-0.5 rounded-full bg-white/20 font-bold text-[11px]">
-                        {likesCount[activePhoto.id]}
-                      </span>
-                    )}
+                    <X className="w-4 h-4 shrink-0" />
+                    <span>Close</span>
                   </button>
                 </div>
+
+                {/* Left Navigation Arrow */}
+                {filteredPhotos.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handlePrevPhoto}
+                    title="Previous Memory (Left Arrow)"
+                    className="fixed left-2 sm:left-6 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-3.5 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all backdrop-blur-md border border-white/20 shadow-2xl active:scale-90"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                )}
+
+                {/* Right Navigation Arrow */}
+                {filteredPhotos.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleNextPhoto}
+                    title="Next Memory (Right Arrow)"
+                    className="fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 p-3 sm:p-3.5 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all backdrop-blur-md border border-white/20 shadow-2xl active:scale-90"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                )}
+
+                {/* Lightbox Main Container */}
+                <motion.div
+                  key={activePhoto.id}
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-4xl w-full max-h-[85vh] bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/20 dark:border-slate-800 p-4 sm:p-7 flex flex-col items-center my-auto z-40 shrink-0"
+                >
+                  <div className="w-full flex-1 max-h-[55vh] rounded-2xl overflow-hidden mb-3 bg-slate-950 flex items-center justify-center relative group">
+                    {activePhoto.isVideo ? (
+                      (() => {
+                        const primaryVid = activePhoto.videoUrl;
+                        const fallbackVid = activePhoto.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
+                        const isVidError = videoErrorMap[activePhoto.id];
+
+                        let vidSrc = isVidError
+                          ? (fallbackVid || primaryVid)
+                          : (primaryVid || fallbackVid);
+
+                        if (vidSrc && !vidSrc.startsWith("http")) {
+                          vidSrc = getAssetUrl(vidSrc);
+                        }
+
+                        return (
+                          <video
+                            key={activePhoto.id + "-" + (isVidError ? "fallback" : "primary")}
+                            src={vidSrc}
+                            controls
+                            autoPlay
+                            loop
+                            playsInline
+                            poster={getAssetUrl(activePhoto.url)}
+                            onError={() => {
+                              console.warn("Gallery video failed to play:", activePhoto.id, vidSrc);
+                              setVideoErrorMap((prev) => ({ ...prev, [activePhoto.id]: true }));
+                            }}
+                            className="w-full h-full object-contain max-h-[55vh] rounded-2xl"
+                          />
+                        );
+                      })()
+                    ) : (
+                      <img
+                        src={getPhotoSrc(activePhoto)}
+                        alt={activePhoto.caption}
+                        referrerPolicy="no-referrer"
+                        onError={() => handleImageError(activePhoto.id)}
+                        className="w-full h-full object-contain max-h-[55vh] rounded-2xl select-none"
+                      />
+                    )}
+                  </div>
+
+                  {/* Local Source Info Notice */}
+                  {activePhoto.isVideo ? (
+                    <div className="w-full max-w-xl mb-3 px-3.5 py-2 rounded-xl bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/50 flex items-center justify-between text-xs text-pink-700 dark:text-pink-300">
+                      <div className="flex items-center gap-2 truncate">
+                        <Info className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
+                          Local Path: <code className="font-mono bg-pink-100 dark:bg-pink-900/60 px-1.5 py-0.5 rounded text-[11px]">{activePhoto.videoUrl}</code>
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider shrink-0 bg-pink-200 dark:bg-pink-900 px-2 py-0.5 rounded-full">
+                        {videoErrorMap[activePhoto.id] ? "Fallback" : "Local Ready"}
+                      </span>
+                    </div>
+                  ) : activePhoto.url.startsWith("/photos/") ? (
+                    <div className="w-full max-w-xl mb-3 px-3.5 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/50 flex items-center justify-between text-xs text-purple-700 dark:text-purple-300">
+                      <div className="flex items-center gap-2 truncate">
+                        <Info className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
+                          Local Path: <code className="font-mono bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 rounded text-[11px]">{activePhoto.url}</code>
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider shrink-0 bg-purple-200 dark:bg-purple-900 px-2 py-0.5 rounded-full">
+                        {imageErrorMap[activePhoto.id] ? "Fallback" : "Local JPEG"}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="text-center max-w-xl space-y-2">
+                    <h3 className="text-base sm:text-2xl font-serif italic font-medium text-slate-900 dark:text-slate-100 leading-snug">
+                      "{activePhoto.caption}"
+                    </h3>
+
+                    {activePhoto.shortCaption && (
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-lg mx-auto italic font-sans">
+                        {activePhoto.shortCaption}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-1">
+                      {activePhoto.date && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-pink-500" /> {activePhoto.date}
+                        </span>
+                      )}
+                      {activePhoto.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-rose-500" /> {activePhoto.location}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-pink-600 dark:text-pink-400 font-semibold">
+                        <Eye className="w-3.5 h-3.5 text-pink-500" /> {viewCounts[activePhoto.id] || 0} views
+                      </span>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={(e) => handleLoveClick(e, activePhoto.id)}
+                        className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold transition-all shadow-md active:scale-95 ${
+                          likedPhotos[activePhoto.id]
+                            ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-pink-500/30 scale-105"
+                            : darkMode
+                            ? "bg-slate-800 text-slate-200 hover:bg-pink-500/20"
+                            : "bg-pink-50 text-pink-600 hover:bg-pink-100"
+                        }`}
+                      >
+                        <Heart
+                          className={`w-4 h-4 ${
+                            likedPhotos[activePhoto.id] ? "fill-white text-white" : "fill-pink-300 text-pink-500"
+                          }`}
+                        />
+                        <span>{likedPhotos[activePhoto.id] ? "Loved ❤️" : "Send Love"}</span>
+                        {(likesCount[activePhoto.id] || 0) > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-white/20 font-bold text-[11px]">
+                            {likesCount[activePhoto.id]}
+                          </span>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActivePhoto(null)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-rose-500/15 hover:bg-rose-500/30 text-rose-600 dark:text-rose-300 border border-rose-500/30 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Close Memory</span>
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
 
       <div className="text-center">
         <button
