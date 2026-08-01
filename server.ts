@@ -17,9 +17,15 @@ async function sendDiscordWebhook(embedData: {
   color: number;
   fields: { name: string; value: string; inline?: boolean }[];
 }) {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  const rawUrl = process.env.DISCORD_WEBHOOK_URL || process.env.VITE_DISCORD_WEBHOOK_URL;
+  if (!rawUrl) {
+    console.log("[Discord Webhook Skipped - DISCORD_WEBHOOK_URL not set]:", embedData.title);
+    return;
+  }
+
+  const webhookUrl = rawUrl.trim().replace(/^["']|["']$/g, "");
   if (!webhookUrl || webhookUrl.includes("your_webhook_here") || webhookUrl.includes("your/webhook")) {
-    console.log("[Discord Webhook Mock/Skipped - DISCORD_WEBHOOK_URL not configured]:", embedData.title);
+    console.log("[Discord Webhook Skipped - Invalid DISCORD_WEBHOOK_URL]:", embedData.title);
     return;
   }
 
@@ -46,12 +52,26 @@ async function sendDiscordWebhook(embedData: {
     });
 
     if (!res.ok) {
-      console.error("[Discord Webhook Error]:", res.status, res.statusText);
+      const errorText = await res.text().catch(() => "");
+      console.error("[Discord Webhook Error]:", res.status, res.statusText, errorText);
+    } else {
+      console.log("[Discord Webhook Sent Successfully]:", embedData.title);
     }
   } catch (err) {
     console.error("[Discord Webhook Failed]:", err);
   }
 }
+
+// Enable CORS middleware for Vercel serverless function compatibility
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Password verification API
 app.post("/api/verify-password", async (req, res) => {
@@ -68,8 +88,8 @@ app.post("/api/verify-password", async (req, res) => {
     inputPass === "memory";
 
   if (isMatch) {
-    // Notify discord of password unlock
-    sendDiscordWebhook({
+    // Notify discord of password unlock (AWAITED for serverless environment)
+    await sendDiscordWebhook({
       title: "🔑 Password Unlocked",
       description: "Someone successfully entered the password and unlocked the website!",
       color: 0xf472b6, // Pink
