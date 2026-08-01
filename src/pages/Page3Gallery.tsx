@@ -429,28 +429,31 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
               <div className="w-full flex-1 max-h-[58vh] rounded-2xl overflow-hidden mb-4 bg-slate-950 flex items-center justify-center relative group">
                 {activePhoto.isVideo ? (
                   (() => {
-                    const primaryVid = activePhoto.videoUrl ? getAssetUrl(activePhoto.videoUrl) : "";
-                    const fallbackVid = activePhoto.fallbackVideoUrl
-                      ? (activePhoto.fallbackVideoUrl.startsWith("http")
-                          ? activePhoto.fallbackVideoUrl
-                          : getAssetUrl(activePhoto.fallbackVideoUrl))
-                      : "";
-                    const vidSrc = videoErrorMap[activePhoto.id]
+                    const primaryVid = activePhoto.videoUrl;
+                    const fallbackVid = activePhoto.fallbackVideoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+                    const isVidError = videoErrorMap[activePhoto.id];
+
+                    let vidSrc = (isVidError || (primaryVid && primaryVid.startsWith("/videos/")))
                       ? (fallbackVid || primaryVid)
                       : (primaryVid || fallbackVid);
 
+                    if (vidSrc && !vidSrc.startsWith("http")) {
+                      vidSrc = getAssetUrl(vidSrc);
+                    }
+
                     return (
                       <video
-                        key={activePhoto.id + (videoErrorMap[activePhoto.id] ? "-fallback" : "-primary")}
+                        key={activePhoto.id + "-" + (isVidError ? "fallback" : "primary")}
+                        src={vidSrc}
                         controls
                         autoPlay
                         loop
                         playsInline
                         poster={getAssetUrl(activePhoto.url)}
                         onError={() => {
+                          console.warn("Gallery video failed to play:", activePhoto.id, vidSrc);
                           setVideoErrorMap((prev) => ({ ...prev, [activePhoto.id]: true }));
                         }}
-                        src={vidSrc}
                         className="w-full h-full object-contain max-h-[58vh] rounded-2xl"
                       />
                     );

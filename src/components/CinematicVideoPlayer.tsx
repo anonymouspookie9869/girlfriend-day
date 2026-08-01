@@ -41,6 +41,7 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [videoErrorMap, setVideoErrorMap] = useState<Record<string, boolean>>({});
+  const [imageErrorMap, setImageErrorMap] = useState<Record<string, boolean>>({});
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -220,23 +221,19 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
               }`}
             >
               <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
-                {video.videoUrl ? (
-                  <video
-                    src={getAssetUrl(video.videoUrl)}
-                    poster={getAssetUrl(video.url)}
-                    preload="metadata"
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
-                  />
-                ) : (
-                  <img
-                    src={getAssetUrl(video.url)}
-                    alt={video.caption}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
-                  />
-                )}
+                <img
+                  src={
+                    imageErrorMap[video.id]
+                      ? getAssetUrl(video.fallbackUrl || video.url)
+                      : getAssetUrl(video.url)
+                  }
+                  alt={video.caption}
+                  onError={() => {
+                    setImageErrorMap((prev) => ({ ...prev, [video.id]: true }));
+                  }}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
+                />
 
                 {/* Dark Vignette Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 group-hover:from-black/90 transition-all" />
@@ -369,20 +366,23 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
                 className="w-full flex-1 max-h-[65vh] bg-black flex items-center justify-center relative cursor-pointer overflow-hidden"
               >
                 {(() => {
-                  const primaryVideo = activeVideo.videoUrl ? getAssetUrl(activeVideo.videoUrl) : "";
-                  const fallbackVideo = activeVideo.fallbackVideoUrl
-                    ? (activeVideo.fallbackVideoUrl.startsWith("http")
-                        ? activeVideo.fallbackVideoUrl
-                        : getAssetUrl(activeVideo.fallbackVideoUrl))
-                    : "";
-                  const currentVideoSrc = videoErrorMap[activeVideo.id]
+                  const primaryVideo = activeVideo.videoUrl;
+                  const fallbackVideo = activeVideo.fallbackVideoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+                  const isError = videoErrorMap[activeVideo.id];
+
+                  let activeSrc = (isError || (primaryVideo && primaryVideo.startsWith("/videos/")))
                     ? (fallbackVideo || primaryVideo)
                     : (primaryVideo || fallbackVideo);
+
+                  if (activeSrc && !activeSrc.startsWith("http")) {
+                    activeSrc = getAssetUrl(activeSrc);
+                  }
 
                   return (
                     <video
                       ref={videoRef}
-                      key={activeVideo.id + (videoErrorMap[activeVideo.id] ? "-fallback" : "-primary")}
+                      key={activeVideo.id + "-" + (isError ? "fallback" : "primary")}
+                      src={activeSrc}
                       autoPlay
                       playsInline
                       loop
@@ -390,10 +390,9 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
                       poster={getAssetUrl(activeVideo.url)}
                       onTimeUpdate={handleTimeUpdate}
                       onError={() => {
-                        console.warn("Video failed to play:", activeVideo.id, currentVideoSrc);
+                        console.warn("Video failed to play:", activeVideo.id, activeSrc);
                         setVideoErrorMap((prev) => ({ ...prev, [activeVideo.id]: true }));
                       }}
-                      src={currentVideoSrc}
                       className="w-full h-full object-contain max-h-[65vh]"
                     />
                   );

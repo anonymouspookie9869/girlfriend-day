@@ -102,20 +102,29 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
+  const primaryAudio = activeTrack.audioUrl;
+  const fallbackAudio = activeTrack.fallbackAudioUrl || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+  const isAudioErr = audioErrorMap[activeTrack.id];
+
+  let activeAudioSrc = (isAudioErr || (primaryAudio && primaryAudio.startsWith("/music/")))
+    ? (fallbackAudio || primaryAudio)
+    : (primaryAudio || fallbackAudio);
+
+  if (activeAudioSrc && !activeAudioSrc.startsWith("http")) {
+    activeAudioSrc = getAssetUrl(activeAudioSrc);
+  }
+
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 max-w-4xl mx-auto flex flex-col justify-center">
       {/* Hidden Audio Element */}
       <audio
         ref={audioRef}
-        key={activeTrack.id + (audioErrorMap[activeTrack.id] ? "-fallback" : "-local")}
-        src={
-          audioErrorMap[activeTrack.id]
-            ? activeTrack.fallbackAudioUrl || getAssetUrl(activeTrack.audioUrl)
-            : getAssetUrl(activeTrack.audioUrl || activeTrack.fallbackAudioUrl)
-        }
+        key={activeTrack.id + "-" + (isAudioErr ? "fallback" : "primary")}
+        src={activeAudioSrc}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleNextTrack}
         onError={() => {
+          console.warn("Audio media error fired:", activeTrack.id, activeAudioSrc);
           setAudioErrorMap((prev) => ({ ...prev, [activeTrack.id]: true }));
         }}
       />
