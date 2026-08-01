@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { Disc, Play, Pause, Music, Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Info } from "lucide-react";
 import { PlaylistTrack } from "../types";
-import { getAssetUrl } from "../utils/assets";
+import { getAssetUrl, getGitHubCdnUrl } from "../utils/assets";
 
 interface Page4PlaylistProps {
   playlist: PlaylistTrack[];
@@ -94,13 +94,11 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const primaryAudio = activeTrack.audioUrl;
-  const fallbackAudio = activeTrack.fallbackAudioUrl || "/music/Music1.mp3";
+  const primaryAudio = activeTrack.audioUrl || "/music/Music1.mp3";
+  const fallbackAudio = activeTrack.fallbackAudioUrl || getGitHubCdnUrl(primaryAudio);
   const isAudioErr = audioErrorMap[activeTrack.id];
 
-  let activeAudioSrc = isAudioErr
-    ? (fallbackAudio || primaryAudio)
-    : (primaryAudio || fallbackAudio);
+  let activeAudioSrc = isAudioErr ? fallbackAudio : primaryAudio;
 
   if (activeAudioSrc && !activeAudioSrc.startsWith("http")) {
     activeAudioSrc = getAssetUrl(activeAudioSrc);

@@ -5,7 +5,7 @@ import { Camera, X, MapPin, Calendar, Heart, Sparkles, ChevronLeft, ChevronRight
 import { PhotoItem } from "../types";
 import { triggerHeartsConfetti } from "../utils/confetti";
 import { CinematicVideoPlayer } from "../components/CinematicVideoPlayer";
-import { getAssetUrl } from "../utils/assets";
+import { getAssetUrl, getGitHubCdnUrl } from "../utils/assets";
 
 interface Page3GalleryProps {
   photos: PhotoItem[];
@@ -38,8 +38,10 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
       return "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
     }
     if (imageErrorMap[p.id]) {
-      const fb = p.fallbackUrl || p.url;
-      return fb.startsWith("http") ? fb : getAssetUrl(fb);
+      if (p.fallbackUrl) {
+        return p.fallbackUrl.startsWith("http") ? p.fallbackUrl : getGitHubCdnUrl(p.fallbackUrl);
+      }
+      return getGitHubCdnUrl(p.url);
     }
     return getAssetUrl(p.url);
   };
@@ -208,7 +210,7 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
 
       <div className="text-center mb-8">
         <span className="text-xs font-semibold tracking-widest text-pink-500 uppercase">Page 3 • Memory Gallery</span>
-        <h2 className="text-3xl sm:text-4xl font-serif font-bold mt-1 bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+        <h2 className="text-3xl sm:text-4xl font-serif font-bold mt-1 py-1.5 leading-tight bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
           Captured Moments & Video Edits
         </h2>
         <p className={`text-xs sm:text-sm mt-2 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>

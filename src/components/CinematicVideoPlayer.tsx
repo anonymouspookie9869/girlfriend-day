@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { PhotoItem } from "../types";
 import { triggerHeartsConfetti } from "../utils/confetti";
-import { getAssetUrl } from "../utils/assets";
+import { getAssetUrl, getGitHubCdnUrl } from "../utils/assets";
 
 interface CinematicVideoPlayerProps {
   videos: PhotoItem[];
@@ -50,8 +50,10 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
       return "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
     }
     if (imageErrorMap[video.id]) {
-      const fb = video.fallbackUrl || video.url;
-      return fb.startsWith("http") ? fb : getAssetUrl(fb);
+      if (video.fallbackUrl) {
+        return video.fallbackUrl.startsWith("http") ? video.fallbackUrl : getGitHubCdnUrl(video.fallbackUrl);
+      }
+      return getGitHubCdnUrl(video.url);
     }
     return getAssetUrl(video.url);
   };
@@ -202,7 +204,7 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
             <Film className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h3 className={`text-xl font-serif font-bold flex items-center gap-2 ${darkMode ? "text-slate-100" : "text-slate-900"}`}>
               Cinematic Memory Edits
               <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
             </h3>
@@ -381,13 +383,11 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
                     className="w-full flex-1 max-h-[58vh] bg-black flex items-center justify-center relative cursor-pointer overflow-hidden"
                   >
                     {(() => {
-                      const primaryVideo = activeVideo.videoUrl;
-                      const fallbackVideo = activeVideo.fallbackVideoUrl || activeVideo.videoUrl || "/videos/video1.mp4";
+                      const primaryVideo = activeVideo.videoUrl || "/videos/video1.mp4";
+                      const fallbackVideo = activeVideo.fallbackVideoUrl || getGitHubCdnUrl(primaryVideo);
                       const isError = videoErrorMap[activeVideo.id];
 
-                      let activeSrc = isError
-                        ? (fallbackVideo || primaryVideo)
-                        : (primaryVideo || fallbackVideo);
+                      let activeSrc = isError ? fallbackVideo : primaryVideo;
 
                       if (activeSrc && !activeSrc.startsWith("http")) {
                         activeSrc = getAssetUrl(activeSrc);

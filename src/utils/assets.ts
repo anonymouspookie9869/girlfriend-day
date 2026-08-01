@@ -44,7 +44,8 @@ export function getGitHubCdnUrl(path?: string, cdnBase: string = DEFAULT_GITHUB_
 
 /**
  * Helper to resolve public asset URLs (videos, music, photos).
- * Automatically converts GitHub raw URLs to jsDelivr CDN URLs.
+ * Preserves local relative paths for Vercel/local static serving,
+ * and converts raw.githubusercontent.com URLs to jsDelivr CDN URLs.
  */
 export function getAssetUrl(path?: string): string {
   if (!path) return "";
@@ -59,16 +60,6 @@ export function getAssetUrl(path?: string): string {
   }
 
   const cleanPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
-
-  // Automatically route relative media assets to jsDelivr GitHub CDN to ensure Vercel and mobile deployments work perfectly
-  if (
-    cleanPath.startsWith("/photos/") ||
-    cleanPath.startsWith("/videos/") ||
-    cleanPath.startsWith("/music/")
-  ) {
-    return `${DEFAULT_GITHUB_CDN_BASE}${cleanPath}`;
-  }
-
   return cleanPath;
 }
 
