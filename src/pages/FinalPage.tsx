@@ -4,6 +4,7 @@ import { Heart, Sparkles, Sprout, Check, RotateCcw, X, BookOpen, Volume2 } from 
 import { FinalResponseType } from "../types";
 import { triggerGrandConfetti, triggerConfessionExplosion } from "../utils/confetti";
 import { getDeviceInfo, getSessionId } from "../utils/storage";
+import { notifyResponseChosen } from "../utils/discordNotifier";
 import { ambientSynth } from "../utils/audioSynth";
 
 interface FinalPageProps {
@@ -47,7 +48,7 @@ export const FinalPage: React.FC<FinalPageProps> = ({
     const { device, location } = getDeviceInfo();
 
     try {
-      await fetch("/api/response", {
+      const res = await fetch("/api/response", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -58,8 +59,12 @@ export const FinalPage: React.FC<FinalPageProps> = ({
           session,
         }),
       });
+      if (!res.ok) {
+        notifyResponseChosen(choice);
+      }
     } catch (err) {
       console.error("Failed to post response to server", err);
+      notifyResponseChosen(choice);
     } finally {
       setIsSubmitting(false);
     }

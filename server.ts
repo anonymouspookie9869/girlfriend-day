@@ -17,9 +17,14 @@ async function sendDiscordWebhook(embedData: {
   color: number;
   fields: { name: string; value: string; inline?: boolean }[];
 }) {
-  const rawUrl = process.env.DISCORD_WEBHOOK_URL || process.env.VITE_DISCORD_WEBHOOK_URL;
+  const rawUrl =
+    process.env.DISCORD_WEBHOOK_URL ||
+    process.env.VITE_DISCORD_WEBHOOK_URL ||
+    process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL ||
+    process.env.WEBHOOK_URL;
+
   if (!rawUrl) {
-    console.log("[Discord Webhook Skipped - DISCORD_WEBHOOK_URL not set]:", embedData.title);
+    console.log("[Discord Webhook Skipped - DISCORD_WEBHOOK_URL not set in process.env]:", embedData.title);
     return;
   }
 
@@ -74,7 +79,7 @@ app.use((req, res, next) => {
 });
 
 // Password verification API
-app.post("/api/verify-password", async (req, res) => {
+app.post(["/api/verify-password", "/verify-password"], async (req, res) => {
   const { password, session, device, location } = req.body || {};
   const secret = (process.env.SECRET_PASSWORD || "forever").trim().toLowerCase();
   const inputPass = (password || "").trim().toLowerCase();
@@ -109,7 +114,7 @@ app.post("/api/verify-password", async (req, res) => {
 });
 
 // Response endpoint (Final Question)
-app.post("/api/response", async (req, res) => {
+app.post(["/api/response", "/response"], async (req, res) => {
   const { response, time, device, location, session } = req.body || {};
 
   const isMaybe = response === "Maybe";
@@ -146,7 +151,7 @@ app.post("/api/response", async (req, res) => {
 });
 
 // General notification endpoint
-app.post("/api/notify", async (req, res) => {
+app.post(["/api/notify", "/notify"], async (req, res) => {
   const { event, time, device, location, session, details } = req.body || {};
 
   await sendDiscordWebhook({

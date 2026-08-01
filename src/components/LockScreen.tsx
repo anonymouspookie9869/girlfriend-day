@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Lock, KeyRound, Sparkles, Heart, HelpCircle, Lightbulb } from "lucide-react";
 import { getDeviceInfo, getSessionId } from "../utils/storage";
+import { notifyPasswordUnlocked } from "../utils/discordNotifier";
 
 interface LockScreenProps {
   onUnlockSuccess: () => void;
@@ -50,6 +51,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlockSuccess, darkMod
       // Fallback client check if server is offline
       const input = password.trim().toLowerCase();
       if (input === "forever" || input === "love" || input === "happy" || input === "memory") {
+        notifyPasswordUnlocked().catch(() => {});
         setIsUnlocking(true);
         setTimeout(() => onUnlockSuccess(), 1100);
       } else {

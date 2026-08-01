@@ -26,6 +26,7 @@ import { defaultContent } from "./data/defaultContent";
 import { AppContentData, AppSavedProgress, FinalResponseType } from "./types";
 import { loadSavedProgress, saveProgress, getSessionId, getDeviceInfo } from "./utils/storage";
 import { ambientSynth } from "./utils/audioSynth";
+import { notifyEvent } from "./utils/discordNotifier";
 
 export default function App() {
   const [content, setContent] = useState<AppContentData>(defaultContent);
@@ -48,19 +49,7 @@ export default function App() {
   // Load custom content or progress on initial load
   useEffect(() => {
     // Notify server of website open
-    const session = getSessionId();
-    const { device, location } = getDeviceInfo();
-    fetch("/api/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "Website opened",
-        time: new Date().toLocaleString(),
-        device,
-        location,
-        session,
-      }),
-    }).catch((e) => console.log("Notify error", e));
+    notifyEvent("Website opened");
 
     // Load saved progress
     const saved = loadSavedProgress();

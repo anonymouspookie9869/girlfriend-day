@@ -100,10 +100,12 @@ npm start
 - **Start Command**: `npm run build && npm start`
 - **Environment Variables**: Set `GEMINI_API_KEY`, `DISCORD_WEBHOOK_URL`, and `SECRET_PASSWORD` in your platform's Environment Variables dashboard.
 
-#### Option B: GitHub Pages / Vercel / Netlify (Static Client SPA)
-- If deploying purely as a static SPA on GitHub Pages or Vercel:
-  - Run `npm run build` to generate static assets in `dist/`.
-  - Serve the `dist` directory.
+#### Option B: Vercel / Netlify
+- On **Vercel**, set the environment variables in your Project Settings > Environment Variables:
+  - `DISCORD_WEBHOOK_URL`: `https://discord.com/api/webhooks/...` (Used by Vercel Serverless Functions `/api/*`)
+  - `VITE_DISCORD_WEBHOOK_URL`: `https://discord.com/api/webhooks/...` (Used by Client SPA directly)
+  - `SECRET_PASSWORD`: `forever` (or custom password)
+  - Note: Ensure you check all environments (Production, Preview, Development) when adding variables in Vercel.
 
 ---
 
