@@ -3,31 +3,32 @@ import { useState, useEffect, useCallback } from "react";
 /**
  * Default GitHub Raw content base URL fallback for media assets
  */
-export const DEFAULT_GITHUB_RAW_BASE =
-  "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public";
+export const DEFAULT_GITHUB_CDN_BASE =
+  "https://cdn.jsdelivr.net/gh/anonymouspookie9869/girlfriend-day@main/public";
 
 /**
- * Converts a relative path into a GitHub Raw URL
+ * Normalizes any media URL: converts raw.githubusercontent.com URLs to jsDelivr CDN
+ * so that browsers receive proper MIME types (image/jpeg, video/mp4, audio/mpeg) and byte ranges.
  */
-export function getGitHubRawUrl(path?: string, rawBase: string = DEFAULT_GITHUB_RAW_BASE): string {
-  if (!path) return "";
-  if (
-    path.startsWith("http://") ||
-    path.startsWith("https://") ||
-    path.startsWith("data:") ||
-    path.startsWith("blob:")
-  ) {
-    return path;
+export function normalizeMediaUrl(url?: string): string {
+  if (!url) return "";
+
+  // Convert raw.githubusercontent.com -> cdn.jsdelivr.net/gh
+  if (url.includes("raw.githubusercontent.com")) {
+    const match = url.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)/);
+    if (match) {
+      const [, user, repo, branch, path] = match;
+      return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
+    }
   }
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${rawBase}${cleanPath}`;
+
+  return url;
 }
 
 /**
- * Helper to resolve public asset URLs (videos, music, photos) so they work
- * consistently across local dev, Vercel, subfolders, and Cloud Run.
+ * Converts a relative path into a jsDelivr GitHub CDN URL
  */
-export function getAssetUrl(path?: string): string {
+export function getGitHubCdnUrl(path?: string, cdnBase: string = DEFAULT_GITHUB_CDN_BASE): string {
   if (!path) return "";
   if (
     path.startsWith("http://") ||
@@ -35,10 +36,29 @@ export function getAssetUrl(path?: string): string {
     path.startsWith("data:") ||
     path.startsWith("blob:")
   ) {
-    return path;
+    return normalizeMediaUrl(path);
+  }
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${cdnBase}${cleanPath}`;
+}
+
+/**
+ * Helper to resolve public asset URLs (videos, music, photos).
+ * Automatically converts GitHub raw URLs to jsDelivr CDN URLs.
+ */
+export function getAssetUrl(path?: string): string {
+  if (!path) return "";
+  const normalized = normalizeMediaUrl(path);
+  if (
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("data:") ||
+    normalized.startsWith("blob:")
+  ) {
+    return normalized;
   }
 
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
   return cleanPath;
 }
 
@@ -150,7 +170,7 @@ export async function loadMediaWithRetry(
   });
 
   if (useGitHubFallback && primaryUrl && !primaryUrl.startsWith("http")) {
-    candidates.push(getGitHubRawUrl(primaryUrl));
+    candidates.push(getGitHubCdnUrl(primaryUrl));
   }
 
   // Deduplicate candidate URLs
