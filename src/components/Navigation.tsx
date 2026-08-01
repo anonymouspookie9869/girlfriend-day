@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Music, VolumeX, Moon, Sun, Edit3, Download, Share2, ChevronLeft, ChevronRight, Grid, Sparkles, X, CheckCircle2 } from "lucide-react";
+import { Music, VolumeX, Moon, Sun, Download, Share2, ChevronLeft, ChevronRight, Grid, Sparkles, X, CheckCircle2 } from "lucide-react";
 import { ambientSynth } from "../utils/audioSynth";
 import { exportMemoriesToPdf } from "../utils/pdfExport";
 
@@ -9,7 +9,7 @@ interface NavigationProps {
   onPageChange: (page: number) => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  onOpenEditDrawer: () => void;
+  onOpenEditDrawer?: () => void;
   musicPlaying: boolean;
   onToggleMusic: () => void;
   completedStats?: {
@@ -177,15 +177,6 @@ export const Navigation: React.FC<NavigationProps> = ({
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors active:scale-90"
             >
               {darkMode ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            {/* Edit Data JSON Drawer */}
-            <button
-              onClick={onOpenEditDrawer}
-              title="Customize Memories Data"
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors active:scale-90"
-            >
-              <Edit3 className="w-4 h-4" />
             </button>
 
             {/* PDF Export */}

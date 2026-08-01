@@ -5,7 +5,6 @@ import { ParticleBackground } from "./components/ParticleBackground";
 import { Butterflies } from "./components/Butterflies";
 import { CursorGlow } from "./components/CursorGlow";
 import { Navigation } from "./components/Navigation";
-import { EditDataDrawer } from "./components/EditDataDrawer";
 import { WelcomeBackModal } from "./components/WelcomeBackModal";
 
 import { IntroPage } from "./pages/IntroPage";
@@ -43,7 +42,6 @@ export default function App() {
   const [finalResponse, setFinalResponse] = useState<FinalResponseType>(null);
 
   // Modals & Drawers
-  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [welcomeBackOpen, setWelcomeBackOpen] = useState(false);
   const [savedPage, setSavedPage] = useState<number | null>(null);
 
@@ -92,7 +90,6 @@ export default function App() {
       // Don't intercept if user is typing in input or textareas
       if (
         ["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName) ||
-        editDrawerOpen ||
         welcomeBackOpen ||
         !isUnlocked
       ) {
@@ -110,7 +107,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [editDrawerOpen, welcomeBackOpen, isUnlocked]);
+  }, [welcomeBackOpen, isUnlocked]);
 
   // Save progress whenever key state changes
   useEffect(() => {
@@ -319,7 +316,6 @@ export default function App() {
             onPageChange={handlePageChange}
             darkMode={darkMode}
             onToggleDarkMode={handleToggleDarkMode}
-            onOpenEditDrawer={() => setEditDrawerOpen(true)}
             musicPlaying={musicPlaying}
             onToggleMusic={handleToggleMusic}
           />
@@ -337,15 +333,6 @@ export default function App() {
               </motion.div>
             </AnimatePresence>
           </main>
-
-          {/* Edit JSON Drawer */}
-          <EditDataDrawer
-            isOpen={editDrawerOpen}
-            onClose={() => setEditDrawerOpen(false)}
-            content={content}
-            onSaveContent={(newContent) => setContent(newContent)}
-            darkMode={darkMode}
-          />
 
           {/* Welcome Back Resume Modal */}
           <WelcomeBackModal

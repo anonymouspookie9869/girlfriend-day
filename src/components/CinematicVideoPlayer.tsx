@@ -42,6 +42,18 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const [videoErrorMap, setVideoErrorMap] = useState<Record<string, boolean>>({});
   const [imageErrorMap, setImageErrorMap] = useState<Record<string, boolean>>({});
+  const [secondImageErrorMap, setSecondImageErrorMap] = useState<Record<string, boolean>>({});
+
+  const getVideoPosterSrc = (video: PhotoItem) => {
+    if (secondImageErrorMap[video.id]) {
+      return "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
+    }
+    if (imageErrorMap[video.id]) {
+      const fb = video.fallbackUrl || video.url;
+      return fb.startsWith("http") ? fb : getAssetUrl(fb);
+    }
+    return getAssetUrl(video.url);
+  };
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -222,14 +234,14 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
             >
               <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
                 <img
-                  src={
-                    imageErrorMap[video.id]
-                      ? getAssetUrl(video.fallbackUrl || video.url)
-                      : getAssetUrl(video.url)
-                  }
+                  src={getVideoPosterSrc(video)}
                   alt={video.caption}
                   onError={() => {
-                    setImageErrorMap((prev) => ({ ...prev, [video.id]: true }));
+                    if (!imageErrorMap[video.id]) {
+                      setImageErrorMap((prev) => ({ ...prev, [video.id]: true }));
+                    } else {
+                      setSecondImageErrorMap((prev) => ({ ...prev, [video.id]: true }));
+                    }
                   }}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
@@ -367,10 +379,10 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
               >
                 {(() => {
                   const primaryVideo = activeVideo.videoUrl;
-                  const fallbackVideo = activeVideo.fallbackVideoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+                  const fallbackVideo = activeVideo.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
                   const isError = videoErrorMap[activeVideo.id];
 
-                  let activeSrc = (isError || (primaryVideo && primaryVideo.startsWith("/videos/")))
+                  let activeSrc = isError
                     ? (fallbackVideo || primaryVideo)
                     : (primaryVideo || fallbackVideo);
 

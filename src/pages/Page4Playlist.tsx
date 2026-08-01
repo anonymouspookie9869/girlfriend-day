@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion } from "motion/react";
 import { Disc, Play, Pause, Music, Heart, Sparkles, Volume2, VolumeX, SkipBack, SkipForward, Info } from "lucide-react";
 import { PlaylistTrack } from "../types";
-import { ambientSynth } from "../utils/audioSynth";
 import { getAssetUrl } from "../utils/assets";
 
 interface Page4PlaylistProps {
@@ -37,23 +36,16 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
-        ambientSynth.stop();
         setIsPlaying(false);
       } else {
-        // Stop ambient synth if running so audio tracks don't overlap
-        ambientSynth.stop();
         audioRef.current
           .play()
           .then(() => setIsPlaying(true))
-          .catch(() => {
-            // If direct MP3 play fails, toggle ambient synth
-            const state = ambientSynth.toggle();
-            setIsPlaying(state);
+          .catch((err) => {
+            console.warn("Audio play failed:", err);
+            setIsPlaying(false);
           });
       }
-    } else {
-      const state = ambientSynth.toggle();
-      setIsPlaying(state);
     }
   };
 
@@ -103,10 +95,10 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
   };
 
   const primaryAudio = activeTrack.audioUrl;
-  const fallbackAudio = activeTrack.fallbackAudioUrl || "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+  const fallbackAudio = activeTrack.fallbackAudioUrl || "/music/Music1.mp3";
   const isAudioErr = audioErrorMap[activeTrack.id];
 
-  let activeAudioSrc = (isAudioErr || (primaryAudio && primaryAudio.startsWith("/music/")))
+  let activeAudioSrc = isAudioErr
     ? (fallbackAudio || primaryAudio)
     : (primaryAudio || fallbackAudio);
 
@@ -135,7 +127,7 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
           4 Songs Dedicated To You 🎶
         </h2>
         <p className={`text-xs sm:text-sm mt-2 ${darkMode ? "text-slate-400" : "text-slate-600"}`}>
-          Fetching local MP3 files: <code className="font-mono bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded text-pink-600 dark:text-pink-300">/music/music1.mp3</code> to <code className="font-mono bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded text-pink-600 dark:text-pink-300">music4.mp3</code>
+          Dedicated songs: <code className="font-mono bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded text-pink-600 dark:text-pink-300">/music/Music1.mp3</code> to <code className="font-mono bg-pink-100 dark:bg-pink-950/60 px-1.5 py-0.5 rounded text-pink-600 dark:text-pink-300">Music4.mp3</code>
         </p>
       </div>
 

@@ -30,6 +30,26 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
   const [galleryFilter, setGalleryFilter] = useState<"all" | "photos" | "videos">("all");
   const [videoErrorMap, setVideoErrorMap] = useState<Record<string, boolean>>({});
   const [imageErrorMap, setImageErrorMap] = useState<Record<string, boolean>>({});
+  const [secondErrorMap, setSecondErrorMap] = useState<Record<string, boolean>>({});
+
+  const getPhotoSrc = (p: PhotoItem) => {
+    if (secondErrorMap[p.id]) {
+      return "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
+    }
+    if (imageErrorMap[p.id]) {
+      const fb = p.fallbackUrl || p.url;
+      return fb.startsWith("http") ? fb : getAssetUrl(fb);
+    }
+    return getAssetUrl(p.url);
+  };
+
+  const handleImageError = (id: string) => {
+    if (!imageErrorMap[id]) {
+      setImageErrorMap((prev) => ({ ...prev, [id]: true }));
+    } else {
+      setSecondErrorMap((prev) => ({ ...prev, [id]: true }));
+    }
+  };
   const [viewCounts, setViewCounts] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
     photos.forEach((p, idx) => {
@@ -264,16 +284,10 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
               <div>
                 <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4">
                   <img
-                    src={
-                      imageErrorMap[photo.id]
-                        ? getAssetUrl(photo.fallbackUrl || photo.url)
-                        : getAssetUrl(photo.url)
-                    }
+                    src={getPhotoSrc(photo)}
                     alt={photo.caption}
                     referrerPolicy="no-referrer"
-                    onError={() => {
-                      setImageErrorMap((prev) => ({ ...prev, [photo.id]: true }));
-                    }}
+                    onError={() => handleImageError(photo.id)}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
 
@@ -430,10 +444,10 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
                 {activePhoto.isVideo ? (
                   (() => {
                     const primaryVid = activePhoto.videoUrl;
-                    const fallbackVid = activePhoto.fallbackVideoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+                    const fallbackVid = activePhoto.fallbackVideoUrl || "https://raw.githubusercontent.com/anonymouspookie9869/girlfriend-day/main/public/videos/video1.mp4";
                     const isVidError = videoErrorMap[activePhoto.id];
 
-                    let vidSrc = (isVidError || (primaryVid && primaryVid.startsWith("/videos/")))
+                    let vidSrc = isVidError
                       ? (fallbackVid || primaryVid)
                       : (primaryVid || fallbackVid);
 
@@ -460,16 +474,10 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
                   })()
                 ) : (
                   <img
-                    src={
-                      imageErrorMap[activePhoto.id]
-                        ? getAssetUrl(activePhoto.fallbackUrl || activePhoto.url)
-                        : getAssetUrl(activePhoto.url)
-                    }
+                    src={getPhotoSrc(activePhoto)}
                     alt={activePhoto.caption}
                     referrerPolicy="no-referrer"
-                    onError={() => {
-                      setImageErrorMap((prev) => ({ ...prev, [activePhoto.id]: true }));
-                    }}
+                    onError={() => handleImageError(activePhoto.id)}
                     className="w-full h-full object-contain max-h-[58vh] rounded-2xl select-none"
                   />
                 )}
