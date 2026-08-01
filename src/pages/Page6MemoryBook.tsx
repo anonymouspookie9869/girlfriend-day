@@ -72,6 +72,9 @@ export const Page6MemoryBook: React.FC<Page6MemoryBookProps> = ({ bookPages, onN
                     src={getAssetUrl(currentPage.imageUrl)}
                     alt={currentPage.title}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </div>

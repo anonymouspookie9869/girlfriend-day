@@ -17,10 +17,25 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioErrorMap, setAudioErrorMap] = useState<Record<string, boolean>>({});
+  const [secondAudioErrorMap, setSecondAudioErrorMap] = useState<Record<string, boolean>>({});
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const activeTrack = playlist[currentTrackIndex] || playlist[0];
+
+  const getAudioSrc = (track: PlaylistTrack) => {
+    if (secondAudioErrorMap[track.id]) {
+      const num = track.id.replace("s", "");
+      return `https://cdn.jsdelivr.net/gh/anonymouspookie9869/girlfriend-day@main/public/music/music${num}.mp3`;
+    }
+    if (audioErrorMap[track.id]) {
+      if (track.fallbackAudioUrl && track.fallbackAudioUrl !== track.audioUrl) {
+        return track.fallbackAudioUrl.startsWith("http") ? track.fallbackAudioUrl : getGitHubCdnUrl(track.fallbackAudioUrl);
+      }
+      return getGitHubCdnUrl(track.audioUrl || `/music/Music${track.id.replace("s", "")}.mp3`);
+    }
+    return getAssetUrl(track.audioUrl || `/music/Music${track.id.replace("s", "")}.mp3`);
+  };
 
   useEffect(() => {
     if (audioRef.current) {
@@ -94,28 +109,24 @@ export const Page4Playlist: React.FC<Page4PlaylistProps> = ({ playlist, onNext, 
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const primaryAudio = activeTrack.audioUrl || "/music/Music1.mp3";
-  const fallbackAudio = activeTrack.fallbackAudioUrl || getGitHubCdnUrl(primaryAudio);
-  const isAudioErr = audioErrorMap[activeTrack.id];
-
-  let activeAudioSrc = isAudioErr ? fallbackAudio : primaryAudio;
-
-  if (activeAudioSrc && !activeAudioSrc.startsWith("http")) {
-    activeAudioSrc = getAssetUrl(activeAudioSrc);
-  }
+  const activeAudioSrc = getAudioSrc(activeTrack);
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 max-w-4xl mx-auto flex flex-col justify-center">
       {/* Hidden Audio Element */}
       <audio
         ref={audioRef}
-        key={activeTrack.id + "-" + (isAudioErr ? "fallback" : "primary")}
+        key={activeTrack.id + "-" + activeAudioSrc}
         src={activeAudioSrc}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleNextTrack}
         onError={() => {
           console.warn("Audio media error fired:", activeTrack.id, activeAudioSrc);
-          setAudioErrorMap((prev) => ({ ...prev, [activeTrack.id]: true }));
+          if (!audioErrorMap[activeTrack.id]) {
+            setAudioErrorMap((prev) => ({ ...prev, [activeTrack.id]: true }));
+          } else {
+            setSecondAudioErrorMap((prev) => ({ ...prev, [activeTrack.id]: true }));
+          }
         }}
       />
 

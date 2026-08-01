@@ -73,6 +73,10 @@ export const Page11MusicMemories: React.FC<Page11MusicMemoriesProps> = ({
                 src={getAssetUrl(photo.url)}
                 alt={photo.caption}
                 referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const fallback = photo.fallbackUrl || "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
+                  (e.target as HTMLImageElement).src = fallback.startsWith("http") ? fallback : getAssetUrl(fallback);
+                }}
                 className="w-full h-full object-cover rounded-xl"
               />
             </motion.div>

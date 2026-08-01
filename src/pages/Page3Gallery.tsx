@@ -35,13 +35,26 @@ export const Page3Gallery: React.FC<Page3GalleryProps> = ({ photos, onNext, dark
 
   const getPhotoSrc = (p: PhotoItem) => {
     if (secondErrorMap[p.id]) {
-      return "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
+      const defaultUnsplashMap: Record<string, string> = {
+        p1: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000",
+        p2: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&q=80&w=1000",
+        p3: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1000",
+        p4: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=1000",
+        p5: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=1000",
+        p6: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=1000",
+        p7: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=1000",
+        v1: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000",
+        v2: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&q=80&w=1000",
+        v3: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1000",
+        v4: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=1000",
+      };
+      return defaultUnsplashMap[p.id] || "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
     }
     if (imageErrorMap[p.id]) {
-      if (p.fallbackUrl) {
+      if (p.fallbackUrl && p.fallbackUrl !== p.url) {
         return p.fallbackUrl.startsWith("http") ? p.fallbackUrl : getGitHubCdnUrl(p.fallbackUrl);
       }
-      return getGitHubCdnUrl(p.url);
+      return p.url.startsWith("http") ? getAssetUrl(p.fallbackUrl || "/photos/image1.jpg") : getGitHubCdnUrl(p.url);
     }
     return getAssetUrl(p.url);
   };

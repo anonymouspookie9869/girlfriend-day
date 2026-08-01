@@ -47,13 +47,19 @@ export const CinematicVideoPlayer: React.FC<CinematicVideoPlayerProps> = ({
 
   const getVideoPosterSrc = (video: PhotoItem) => {
     if (secondImageErrorMap[video.id]) {
-      return "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
+      const defaultUnsplashMap: Record<string, string> = {
+        v1: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000",
+        v2: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&q=80&w=1000",
+        v3: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1000",
+        v4: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=1000",
+      };
+      return defaultUnsplashMap[video.id] || "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&q=80&w=1000";
     }
     if (imageErrorMap[video.id]) {
-      if (video.fallbackUrl) {
+      if (video.fallbackUrl && video.fallbackUrl !== video.url) {
         return video.fallbackUrl.startsWith("http") ? video.fallbackUrl : getGitHubCdnUrl(video.fallbackUrl);
       }
-      return getGitHubCdnUrl(video.url);
+      return video.url.startsWith("http") ? getAssetUrl(video.fallbackUrl || "/photos/image1.jpg") : getGitHubCdnUrl(video.url);
     }
     return getAssetUrl(video.url);
   };
